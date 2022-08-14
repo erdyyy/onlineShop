@@ -7,9 +7,9 @@
 ### Installing
 
 3. At the root directory which include **docker-compose.yml** files, run below command:
-```csharp
+4. 
 docker-compose up --force-recreate
-```
+
 
 5. You can **call microservices** as below urls:
 
