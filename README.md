@@ -6,12 +6,11 @@
 
 ### Installing
 
-3. At the root directory which include **docker-compose.yml** files, run below command:
+At the root directory which include **docker-compose.yml** files, run below command:
 
 docker-compose up --force-recreate
 
-
-5. You can **call microservices** as below urls:
+You can **call microservices** as below urls:
 
 * **Order Service http://localhost:443/swagger/index.html**
 * **Product Service http://localhost:444/swagger/index.html**
