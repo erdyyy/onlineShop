@@ -8,7 +8,7 @@
 
 3. At the root directory which include **docker-compose.yml** files, run below command:
 ```csharp
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+docker-compose up -d --force-recreate
 ```
 
 5. You can **call microservices** as below urls:
