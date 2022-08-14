@@ -7,7 +7,7 @@
 ### Installing
 
 3. At the root directory which include **docker-compose.yml** files, run below command:
-4. 
+
 docker-compose up --force-recreate
 
 
