@@ -1,0 +1,151 @@
+version: '3.4'
+
+networks:
+  pr:
+    driver: bridge
+
+services:
+
+  productdb:
+    container_name: productdb
+    hostname: productdb_host
+    environment:
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "admin"
+      POSTGRES_DB: ProductDb
+      PGDATA: /var/lib/postgresql/data
+    restart: always
+    
+    ports:
+        - "5432:5432"
+    volumes:
+      - prod_data:/var/lib/postgresql/data
+    networks:
+      - pr  
+    image: postgres:14.1-alpine
+
+
+  orderdb:
+    container_name: orderdb
+    hostname: orderdb_host
+    environment: 
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "admin"
+      POSTGRES_DB: Orderdb
+      PGDATA: /var/lib/postgresql/data
+      
+    restart: always
+    ports:
+        - "5447:5432"
+    volumes:
+      - order_data:/var/lib/postgresql/data/
+    networks:
+      - pr  
+    command: -p 5447
+    image: postgres:14.1-alpine
+
+
+  customerdb:
+    container_name: customerdb
+    hostname: customertdb_host
+    environment:
+     POSTGRES_USER: "admin"
+     POSTGRES_PASSWORD: "admin"
+     POSTGRES_DB: postgres
+     PGDATA: /var/lib/postgresql/data
+    restart: always
+    ports:
+        - "5434:5432"
+    volumes:
+      - customer_data:/var/lib/postgresql/data/
+    networks:
+      - pr  
+    command: -p 5434
+    image: postgres:14.1-alpine
+
+
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-root@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-root}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - pr
+    restart: unless-stopped
+
+
+  rabbitmq:
+    container_name: my-rabbitmq
+    restart: always
+    ports:
+        - "5672:5672"
+        - "15672:15672"
+    networks:
+      - pr  
+    image: rabbitmq:3-management-alpine
+
+  product.api:
+    container_name: product.api
+    networks:
+      - pr  
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings:Db=Server=productdb_host;Port=5432;Database=Productdb;User Id=admin;Password=admin;"
+      - "EventBusSettings:HostAddress=amqp://guest:guest@rabbitmq:5672"
+    depends_on:
+      - productdb
+      - rabbitmq
+    ports:
+      - "444:80"
+    image: ${DOCKER_REGISTRY-}productapi
+    build:
+      context: .
+      dockerfile: Services/Product/Product.API/Dockerfile
+
+  customer.api:
+    networks:
+      - pr  
+    container_name: customer.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings:Db=Server=customertdb_host;Port=5434;Database=Customerdb;User Id=admin;Password=admin;"
+      - "EventBusSettings:HostAddress=amqp://guest:guest@rabbitmq:5672"
+    depends_on:
+      - customerdb
+    ports:
+      - "448:80" 
+    image: ${DOCKER_REGISTRY-}customerapi
+    build:
+      context: .
+      dockerfile: Services/Customer/Customer.API/Dockerfile
+
+  order.api:
+    container_name: order.api
+    networks:
+      - pr  
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings:Db=Server=orderdb_host;Port=5447;Database=Orderdb;User Id=admin;Password=admin;"
+      - "EventBusSettings:HostAddress=amqp://guest:guest@rabbitmq:5672"
+    depends_on:
+      - orderdb
+    ports:
+      - "443:80"
+    image: ${DOCKER_REGISTRY-}orderapi
+    build:
+      context: .
+      dockerfile: Services/Ordering/Ordering.API/Dockerfile
+
+volumes:
+  prod_data:
+  customer_data:
+  order_data:
+  pgadmin:
+
+
